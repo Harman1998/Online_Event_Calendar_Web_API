@@ -1,0 +1,328 @@
+﻿@page
+@{}
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Online Events Calendar</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+</head>
+<body style="background-image : url('/images/bg.png')">
+
+    <div>
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+            <a class="navbar-brand" href="#">Online Events Calendar</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarText" aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarText">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item active">
+                        <button class="btn btn-outline-dark" data-toggle="modal" data-target="#addEvent">Add a Calendar Event</button>
+                    </li>
+                  
+                </ul>
+                
+            </div>
+        </nav>
+
+
+        <div class="container">
+           
+            <table class="table table-striped  table-success">
+                <thead class="thead-dark">
+                    <tr>
+                        <th scope="col">Event Name</th>
+                        <th scope="col">Start Date </th>
+                        <th scope="col">End Date</th>
+                        <th scope="col">Number of Days</th>
+                      
+
+                    </tr>
+                </thead>
+                <tbody id="onlineEvents">
+                  
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+
+
+
+
+
+
+    <script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-2.0.3.min.js"></script>
+    <script src="https://ajax.aspnetcdn.com/ajax/jquery.templates/beta1/jquery.tmpl.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    <script>
+        var uri = 'api/Events';
+
+        $(document).ready(function () {
+            // Gets all Event records
+            $.getJSON(uri)
+                .done(function (data) {
+
+                    $("#onlineEventsTemplate").tmpl(data).appendTo("#onlineEvents");
+                });
+        });
+
+
+
+        function getAllEvents() {
+
+               $.getJSON(uri)
+                   .done(function (data) {
+
+                       $("#onlineEvents").text("");
+
+                    $("#onlineEventsTemplate").tmpl(data).appendTo("#onlineEvents");
+                });
+
+        }
+
+        function addEvent() {
+            var _eventName = $('#eventName').val();
+            var _startDate = $('#startDate').val();
+            var _endDate = $('#endDate').val();
+           
+        
+           
+
+
+            var event = {
+                eventName: _eventName,
+                startDate :_startDate,
+                endDate:  _endDate 
+              
+           
+            };
+
+            $.ajax({
+                type: "POST",
+                url: uri,
+                data: JSON.stringify(event),
+                contentType: "application/json; charset=utf-8"
+            }).done(function (response) {
+                $("#result").html("Success");
+                getAllEvents();
+            }).fail(function (jqXHR, textStatus) {
+                          $("#result").html("An error occured when adding the event.");
+               });
+
+
+
+
+        }
+
+
+
+
+
+        function updateEvent() {
+              var _id = parseInt($('#_id').val());
+           var _eventName = $('#_eventName').val();
+            var _startDate = $('#_startDate').val();
+            var _endDate =  $('#_endDate').val();
+           
+          
+
+
+            
+            var event = {
+                id : _id,
+                eventName: _eventName,
+                startDate :_startDate,
+                endDate:  _endDate 
+              
+           
+            };
+
+            $.ajax({
+                type: "PUT",
+                url: uri+"/"+ _id,
+                data: JSON.stringify(event),
+                contentType: "application/json; charset=utf-8"
+            }).done(function (response) {
+                $("#resultUpdate").html("Success");
+                getAllEvents();
+            }).fail(function (jqXHR, textStatus) {
+                          $("#resultUpdate").html("An error occured When updating the Event");
+               });;
+
+
+
+
+        }
+
+
+
+        function remove(id) {
+
+
+          var yes =  confirm("Are you sure you want to delete this Event?");
+
+            if (yes) {
+                $.ajax({
+                    type: "DELETE",
+                    url: uri + "/" + id,
+
+                }).done(function (response) {
+
+                    getAllEvents();
+                });
+
+            }
+
+
+        }
+
+
+         
+
+
+        function getEventForUpdate(id) {
+
+             $.ajax({
+                type: "GET",
+                url: uri+"/"+id,
+               contentType: "application/json"
+             }).done(function (response) {
+
+                  $('#_id').val(response.id);
+                 $('#_startDate').val(response.startDate) ;
+                 $('#_endDate').val(response.endDate);
+                 $('#_eventName').val(response.eventName);
+               
+              });
+
+
+        }
+    </script>
+
+    
+
+    <script id="onlineEventsTemplate" type="text/x-jquery-tmpl">
+       
+        <tr>
+
+            <td> ${eventName}</td>
+            <td>${startDate}</td>
+            <td>${endDate}</td>
+            <td>${numberOfDays}</td>
+
+
+            <td> <button class="btn btn-outline-primary" onclick="getEventForUpdate('${id}')" data-toggle="modal" data-target="#updateEvent">Edit</button></td>
+            <td> <a href="#" class="btn btn-outline-danger" onclick="remove('${id}')">Discard</a></td>
+
+        </tr>
+    </script>
+
+
+
+    <div class="modal" tabindex="-1" role="dialog" id="addEvent">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Event</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="form-group">
+                            <label for="name">Event Name</label>
+                            <input type="text" class="form-control" id="eventName" aria-describedby="emailHelp" placeholder="Event Name">
+
+                        </div>
+                        <div class="form-group">
+                            <label for="model">Start Date</label>
+                            <input type="datetime-local" class="form-control" id="startDate" aria-describedby="emailHelp" placeholder="Start Date">
+
+                        </div>
+                        <div class="form-group">
+                            <label for="model">End Date</label>
+                            <input type="datetime-local" class="form-control" id="endDate" aria-describedby="emailHelp" placeholder="End Date">
+
+                        </div>
+                     
+
+                        <div class="form-group" id="result">
+
+
+                        </div>
+                        <button type="button" onclick="addEvent()" class="btn btn-primary">Add</button>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
+    <div class="modal" tabindex="-1" role="dialog" id="updateEvent">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Update Event</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form>
+
+                        <div class="form-group">
+
+                            <input type="hidden" class="form-control" id="_id" aria-describedby="emailHelp">
+
+                        </div>
+                        <form>
+                            <div class="form-group">
+                                <label for="name">Event Name</label>
+                                <input type="text" class="form-control" id="_eventName" aria-describedby="emailHelp" placeholder="Event Name">
+
+                            </div>
+                            <div class="form-group">
+                                <label for="model">Start Date</label>
+                                <input type="datetime-local" class="form-control" id="_startDate" aria-describedby="emailHelp" placeholder="Start Date">
+
+                            </div>
+                            <div class="form-group">
+                                <label for="model">End Date </label>
+                                <input type="datetime-local" class="form-control" id="_endDate" aria-describedby="emailHelp" placeholder="End Date">
+
+                            </div>
+
+
+                            <div class="form-group" id="result">
+
+
+                            </div>
+                           
+                        </form>
+
+
+                        <div class="form-group" id="resultUpdate">
+
+
+                        </div>
+                        <button type="button" onclick="updateEvent()" class="btn btn-primary">Update Event</button>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
